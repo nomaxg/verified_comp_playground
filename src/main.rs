@@ -2,8 +2,8 @@ use ark_ff::{Field, Fp64, MontBackend, MontConfig, PrimeField};
 use ark_std::{rand::Rng, UniformRand};
 
 #[derive(MontConfig)]
-#[modulus = "17"]
-#[generator = "2"]
+#[modulus = "1"]
+#[generator = "1"]
 struct FrConfig;
 
 type Fr = Fp64<MontBackend<FrConfig, 1>>;
@@ -39,11 +39,13 @@ impl HashFn {
     }
 }
 
-fn run_reed_solomon_communication_protocol(bob_file: Vec<u64>, alice_file: Vec<u64>) {
-    let mut rng = ark_std::test_rng();
+fn run_reed_solomon_communication_protocol(bob_file: Vec<u64>, alice_file: Vec<u64>) -> bool {
+    let mut rng = rand::thread_rng();
 
     // Alice and Bob have a file of length n
-    assert!(bob_file.len() == alice_file.len());
+    if bob_file.len() != alice_file.len() {
+        return false;
+    };
 
     let alice_evals: Vec<_> = alice_file
         .iter()
@@ -67,11 +69,31 @@ fn run_reed_solomon_communication_protocol(bob_file: Vec<u64>, alice_file: Vec<u
     // equals Alice's fingerprint
     let bob_hash = HashFn::new_from_eval(alice_eval_point);
     let bob_fingerprint = bob_hash.hash(bob_evals);
-    assert!(bob_fingerprint == alice_fingerprint);
+
+    if bob_fingerprint != alice_fingerprint {
+        return false;
+    };
+    true
+}
+
+fn test_differing_fingerprints(num_elems: usize, num_runs: usize) {
+    let mut failures = 0;
+    for _ in 0..num_runs {
+        let alice_file: Vec<u64> = (0..num_elems).map(|_| 0).collect();
+        let mut bob_file = alice_file.clone();
+        bob_file[0] += 1;
+        let success = run_reed_solomon_communication_protocol(alice_file, bob_file);
+        if !success {
+            failures += 1;
+        }
+    }
+
+    println!(
+        "Reed Solomon Equality Check. \n Runs: {} \n Failures: {} \n",
+        num_runs, failures
+    )
 }
 
 fn main() {
-    let alice_file = vec![1, 2, 3, 4];
-    let bob_file = vec![1, 2, 3, 4];
-    run_reed_solomon_communication_protocol(alice_file, bob_file)
+    test_differing_fingerprints(12, 10000);
 }
