@@ -11,6 +11,7 @@ pub enum ProverMode {
     Malicious,
 }
 
+// TODO use a macro to make some base IP that pushes to a queue of messages
 pub trait IP {
     type Message;
     type Input;

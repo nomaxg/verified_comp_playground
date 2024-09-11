@@ -1,6 +1,7 @@
 use ark_ff::{Field, Fp64, MontBackend, MontConfig, PrimeField};
 use ark_std::{rand::Rng, UniformRand};
 
+pub mod freivalds;
 pub mod ip;
 
 #[derive(MontConfig)]
