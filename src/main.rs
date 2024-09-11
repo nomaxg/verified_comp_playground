@@ -1,9 +1,11 @@
 use ark_ff::{Field, Fp64, MontBackend, MontConfig, PrimeField};
 use ark_std::{rand::Rng, UniformRand};
 
+pub mod ip;
+
 #[derive(MontConfig)]
-#[modulus = "1"]
-#[generator = "1"]
+#[modulus = "17"]
+#[generator = "2"]
 struct FrConfig;
 
 type Fr = Fp64<MontBackend<FrConfig, 1>>;
