@@ -1,8 +1,12 @@
 use ark_ff::{Field, Fp64, MontBackend, MontConfig, PrimeField};
 use ark_std::{rand::Rng, UniformRand};
+use mle::index_to_bools;
+
+use crate::mle::random_evals;
 
 pub mod freivalds;
 pub mod ip;
+pub mod mle;
 
 #[derive(MontConfig)]
 #[modulus = "17"]
@@ -98,5 +102,9 @@ fn test_differing_fingerprints(num_elems: usize, num_runs: usize) {
 }
 
 fn main() {
-    test_differing_fingerprints(12, 10000);
+    // test_differing_fingerprints(12, 10000);
+    let v = 2;
+    let evals = random_evals::<Fr>(v);
+    dbg!(evals);
+    // dbg!(index_to_bools(31, 5));
 }
