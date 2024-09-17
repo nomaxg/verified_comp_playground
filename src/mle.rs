@@ -53,6 +53,22 @@ pub fn g_poly<F: Field>(input: &[F]) -> F {
     F::from(2u64) * input[0].pow([3u64]) + input[1] * input[2] + input[1] * input[2]
 }
 
+// Given a list of evals, calculate the univariate polynomial for variable xi
+// With x1,..xi-1 fixed with random values and xi+1 summed away.
+//
+// Returns |F| evaluations of the resulting univariate polynomial
+pub fn calculate_g_i<F: Field>(randoms: &[F], evals: &[F], v: usize) -> Vec<F> {
+    // TODO: hardcoded field  field size, find some way to fix this
+    for i in 0..5 {
+        let mut partial_sum = F::zero();
+        for index in 0..v - randoms.len() - 1 {
+            let vars = index_to_vars(index, v);
+            let r = (randoms.concat(&[F::from(i)])).concat(vars);
+            partial_sum += stream_eval(r, evals, v)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
