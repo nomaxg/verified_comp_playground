@@ -1,5 +1,6 @@
 use crate::fields::{bool_to_field, random_elem};
 use ark_ff::Field;
+use ark_std::iterable::Iterable;
 use rand::thread_rng;
 
 // We need 2^v evaluation points
@@ -45,6 +46,14 @@ pub fn stream_eval<F: Field>(r: &[F], evals: &Vec<F>, v: usize) -> F {
     res
 }
 
+pub fn g_poly<F: Field>(input: &[F]) -> F {
+    // Hardcoding polynomial for now
+    assert!(input.len() == 3);
+
+    // Use example in book 2X1^3 + X1X3 + X2X3
+    F::from(2u64) * input[0].pow([3u64]) + input[1] * input[2] + input[2] * input[3]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,7 +70,7 @@ mod tests {
                 let res = stream_eval::<Fr>(&r, &evals, v);
                 print!("{} ", res);
             }
-            println!("");
+            println!();
         }
     }
 }
