@@ -5,6 +5,7 @@ pub mod fields;
 pub mod freivalds;
 pub mod ip;
 pub mod mle;
+pub mod sumcheck;
 
 use fields::Fr;
 

@@ -59,6 +59,9 @@ pub fn g_poly<F: Field>(input: &[F]) -> F {
 //
 // Cant verifier check in constant time? Simply by observing that all of the evaluation points are
 // distinct - guess this would be O(|F|)
+//
+// But |F| is large - so refactor this to simply return a single evaluation so that the verifier
+// can calculate the degree 1 univariate polynomial (TODO)
 pub fn calculate_g_i<F: Field>(randoms: &[F], evals: &[F], v: usize) -> Vec<F> {
     let mut res = vec![];
     // TODO: hardcoded field  field size, find some way to fix this
