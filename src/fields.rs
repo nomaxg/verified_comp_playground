@@ -26,3 +26,7 @@ pub fn bool_to_field<F: Field>(b: bool) -> F {
         F::zero()
     }
 }
+
+pub fn evals_sum<F: Field>(evals: &[F]) -> F {
+    evals.iter().fold(F::zero(), |acc, &x| acc + x)
+}
