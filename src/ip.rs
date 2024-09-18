@@ -13,16 +13,19 @@ pub enum ProverMode {
 
 // TODO use a macro to make some base IP that pushes to a queue of messages
 pub trait IP {
-    type Message;
+    type ProverMessage;
+    type VerifierMessage;
     type Input;
 
     fn initialize(input: Self::Input, prover_mode: ProverMode) -> Self;
-    fn add_message(&mut self, message: Self::Message);
-    fn get_last_message(&self) -> Self::Message;
+    fn add_verifier_message(&mut self, message: Self::VerifierMessage);
+    fn add_prover_message(&mut self, message: Self::ProverMessage);
+    fn get_last_prover_message(&self) -> Self::ProverMessage;
+    fn get_last_verifier_message(&self) -> Self::VerifierMessage;
     fn total_messages(&self) -> usize;
-    fn run_honest_prover_logic(&mut self) -> Self::Message;
-    fn run_malicious_prover_logic(&mut self) -> Self::Message;
-    fn run_verifier_logic(&mut self) -> Self::Message;
+    fn run_honest_prover_logic(&mut self) -> Self::ProverMessage;
+    fn run_malicious_prover_logic(&mut self) -> Self::ProverMessage;
+    fn run_verifier_logic(&mut self) -> Self::VerifierMessage;
     fn get_status(&self) -> Status;
     fn get_prover_mode(&self) -> ProverMode;
 
@@ -35,18 +38,17 @@ pub trait IP {
 
         let num_messages = self.total_messages();
 
-        let next_message = {
-            if num_messages % 2 == 0 {
-                match self.get_prover_mode() {
-                    ProverMode::Honest => self.run_honest_prover_logic(),
-                    ProverMode::Malicious => self.run_malicious_prover_logic(),
-                }
-            } else {
-                self.run_verifier_logic()
-            }
-        };
+        if num_messages % 2 == 0 {
+            let prover_message = match self.get_prover_mode() {
+                ProverMode::Honest => self.run_honest_prover_logic(),
+                ProverMode::Malicious => self.run_malicious_prover_logic(),
+            };
+            self.add_prover_message(prover_message);
+        } else {
+            let verifier_message = self.run_verifier_logic();
+            self.add_verifier_message(verifier_message);
+        }
 
-        self.add_message(next_message);
         self.get_status()
     }
 }
@@ -65,7 +67,8 @@ mod tests {
     }
 
     impl IP for SumIP {
-        type Message = (u64, u64);
+        type ProverMessage = (u64, u64);
+        type VerifierMessage = ();
         type Input = u64;
 
         fn initialize(input: Self::Input, prover_mode: ProverMode) -> Self {
@@ -77,11 +80,11 @@ mod tests {
             }
         }
 
-        fn run_honest_prover_logic(&mut self) -> Self::Message {
+        fn run_honest_prover_logic(&mut self) -> Self::ProverMessage {
             (1, self.target_sum - 1)
         }
 
-        fn run_malicious_prover_logic(&mut self) -> Self::Message {
+        fn run_malicious_prover_logic(&mut self) -> Self::ProverMessage {
             (2, self.target_sum - 1)
         }
 
@@ -89,27 +92,30 @@ mod tests {
             self.status.clone()
         }
 
-        fn run_verifier_logic(&mut self) -> Self::Message {
-            let last_message = self.get_last_message();
+        fn run_verifier_logic(&mut self) -> Self::VerifierMessage {
+            let last_message = self.get_last_prover_message();
             if last_message.0 + last_message.1 == self.target_sum {
                 self.status = Status::Accepted;
             } else {
                 self.status = Status::Rejected;
             }
-            (0, 0)
         }
 
-        fn add_message(&mut self, message: Self::Message) {
+        fn add_prover_message(&mut self, message: Self::ProverMessage) {
             self.messages.push(message);
         }
+
+        fn add_verifier_message(&mut self, message: Self::VerifierMessage) {}
 
         fn total_messages(&self) -> usize {
             self.messages.len()
         }
 
-        fn get_last_message(&self) -> Self::Message {
+        fn get_last_prover_message(&self) -> Self::ProverMessage {
             *self.messages.last().unwrap()
         }
+
+        fn get_last_verifier_message(&self) -> Self::VerifierMessage {}
 
         fn get_prover_mode(&self) -> ProverMode {
             self.prover_mode.clone()

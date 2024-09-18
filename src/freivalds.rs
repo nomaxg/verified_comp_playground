@@ -21,7 +21,8 @@ struct MatMulIP {
 }
 
 impl IP for MatMulIP {
-    type Message = Option<Array2<F>>;
+    type ProverMessage = Array2<F>;
+    type VerifierMessage = ();
     type Input = (Array2<F>, Array2<F>);
 
     fn initialize(input: Self::Input, prover_mode: ProverMode) -> Self {
@@ -34,24 +35,24 @@ impl IP for MatMulIP {
         }
     }
 
-    fn run_honest_prover_logic(&mut self) -> Self::Message {
+    fn run_honest_prover_logic(&mut self) -> Self::ProverMessage {
         let c_array = self.a_array.dot(&self.b_array);
-        Some(c_array)
+        c_array
     }
 
-    fn run_malicious_prover_logic(&mut self) -> Self::Message {
+    fn run_malicious_prover_logic(&mut self) -> Self::ProverMessage {
         let mut c_array = self.a_array.dot(&self.b_array);
         // Manipulate one of the elements
         c_array[(0, 0)] += F::one();
-        Some(c_array)
+        c_array
     }
 
     fn get_status(&self) -> Status {
         self.status.clone()
     }
 
-    fn run_verifier_logic(&mut self) -> Self::Message {
-        let c_array = self.get_last_message().unwrap();
+    fn run_verifier_logic(&mut self) -> Self::VerifierMessage {
+        let c_array = self.get_last_prover_message();
         let mut rng = rand::thread_rng();
         let mut r_powers = Array1::<F>::default(c_array.dim().0);
 
@@ -70,21 +71,23 @@ impl IP for MatMulIP {
         } else {
             self.status = Status::Rejected;
         }
-
-        None
     }
 
-    fn add_message(&mut self, message: Self::Message) {
-        self.c_array = message;
+    fn add_prover_message(&mut self, message: Self::ProverMessage) {
+        self.c_array = Some(message);
     }
+
+    fn add_verifier_message(&mut self, _message: Self::VerifierMessage) {}
 
     fn total_messages(&self) -> usize {
         self.c_array.as_ref().map_or(0, |_| 1)
     }
 
-    fn get_last_message(&self) -> Self::Message {
-        self.c_array.clone()
+    fn get_last_prover_message(&self) -> Self::ProverMessage {
+        self.c_array.clone().unwrap()
     }
+
+    fn get_last_verifier_message(&self) -> Self::VerifierMessage {}
 
     fn get_prover_mode(&self) -> ProverMode {
         self.prover_mode.clone()
