@@ -1,6 +1,5 @@
 use crate::fields::bool_to_field;
 use ark_ff::Field;
-use ark_std::iterable::Iterable;
 use rand::thread_rng;
 
 // We need 2^v evaluation points
@@ -35,7 +34,7 @@ pub fn w_basis_eval<F: Field>(r: &[F], eval: (usize, F), v: usize) -> F {
     prod
 }
 
-pub fn stream_eval<F: Field>(r: &[F], evals: &Vec<F>, v: usize) -> F {
+pub fn stream_eval<F: Field>(r: &[F], evals: &[F], v: usize) -> F {
     let mut res = F::zero();
 
     for (i, eval) in evals.iter().enumerate() {
@@ -57,22 +56,39 @@ pub fn g_poly<F: Field>(input: &[F]) -> F {
 // With x1,..xi-1 fixed with random values and xi+1 summed away.
 //
 // Returns |F| evaluations of the resulting univariate polynomial
+//
+// Cant verifier check in constant time? Simply by observing that all of the evaluation points are
+// distinct - guess this would be O(|F|)
 pub fn calculate_g_i<F: Field>(randoms: &[F], evals: &[F], v: usize) -> Vec<F> {
+    let mut res = vec![];
     // TODO: hardcoded field  field size, find some way to fix this
     for i in 0..5 {
         let mut partial_sum = F::zero();
-        for index in 0..v - randoms.len() - 1 {
-            let vars = index_to_vars(index, v);
-            let r = (randoms.concat(&[F::from(i)])).concat(vars);
-            partial_sum += stream_eval(r, evals, v)
+        for index in 0..v - randoms.len() {
+            let vars = index_to_vars(index, v - randoms.len() - 1);
+            let r = [randoms, &[F::from(i as u32)], &vars].concat();
+            let eval = stream_eval(&r, evals, v);
+            partial_sum += eval;
         }
+        res.push(partial_sum);
     }
+    res
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::fields::Fr;
+
+    #[test]
+    fn test_partial_sum() {
+        let v = 2;
+        let evals = vec![Fr::from(1), Fr::from(1), Fr::from(2), Fr::from(4)];
+        let univariate_evals = calculate_g_i(&[], &evals, v);
+
+        // Sum g(0) + g(1) should be 8
+        assert_eq!(univariate_evals[0] + univariate_evals[1], Fr::from(8));
+    }
 
     #[test]
     fn test_g_sum() {
