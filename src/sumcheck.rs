@@ -74,10 +74,10 @@ where
         let rand_response = random_elem::<F>();
 
         if round_num == 0 {
-            dbg!("failing in first round");
             // In the first round, verify that the univariate polynomial sums to the hypercube eval sum
             let sum_check_success = univariate_sum == self.g_sum;
             if !sum_check_success {
+                dbg!("failing in first round");
                 self.status = Status::Rejected;
             }
         } else if round_num < self.v - 1 {
@@ -134,13 +134,12 @@ mod tests {
 
     #[test]
     fn test_sumcheck_ip() {
-        let v = 2;
+        let v = 8;
 
         let mut honest_sumcheck_ip: SumCheck<Fr> = SumCheck::initialize(v, ProverMode::Honest);
-        let _ = honest_sumcheck_ip.step();
-        let _ = honest_sumcheck_ip.step();
-        let _ = honest_sumcheck_ip.step();
-        let _ = honest_sumcheck_ip.step();
+        for _ in 0..v * 2 {
+            let _ = honest_sumcheck_ip.step();
+        }
         assert_eq!(honest_sumcheck_ip.get_status(), Status::Accepted);
     }
 }

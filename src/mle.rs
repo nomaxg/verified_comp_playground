@@ -67,8 +67,9 @@ pub fn calculate_g_i<F: Field>(randoms: &[F], evals: &[F], v: usize) -> Vec<F> {
     // TODO: hardcoded field  field size, find some way to fix this
     for i in 0..5 {
         let mut partial_sum = F::zero();
-        for index in 0..v - randoms.len() {
-            let vars = index_to_vars(index, v - randoms.len() - 1);
+        let total_indices = 2u32.pow((v - randoms.len() - 1) as u32);
+        for index in 0..total_indices {
+            let vars = index_to_vars(index as usize, v - randoms.len() - 1);
             let r = [randoms, &[F::from(i as u32)], &vars].concat();
             let eval = stream_eval(&r, evals, v);
             partial_sum += eval;
@@ -85,12 +86,21 @@ mod tests {
 
     #[test]
     fn test_partial_sum() {
-        let v = 2;
-        let evals = vec![Fr::from(1), Fr::from(1), Fr::from(2), Fr::from(4)];
+        let v = 3;
+        let evals = vec![
+            Fr::from(1),
+            Fr::from(1),
+            Fr::from(2),
+            Fr::from(4),
+            Fr::from(1),
+            Fr::from(1),
+            Fr::from(2),
+            Fr::from(4),
+        ];
         let univariate_evals = calculate_g_i(&[], &evals, v);
 
         // Sum g(0) + g(1) should be 8
-        assert_eq!(univariate_evals[0] + univariate_evals[1], Fr::from(8));
+        assert_eq!(univariate_evals[0] + univariate_evals[1], Fr::from(16));
     }
 
     #[test]
