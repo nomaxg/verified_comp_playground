@@ -68,9 +68,9 @@ where
     }
 
     fn run_verifier_logic(&mut self) -> Self::VerifierMessage {
-        let univarate_evals = self.get_last_prover_message();
+        let univariate_evals = self.get_last_prover_message();
         let round_num = self.r.len();
-        let univariate_sum = univarate_evals[0] + univarate_evals[1];
+        let univariate_sum = univariate_evals[0] + univariate_evals[1];
         let rand_response = random_elem::<F>();
 
         if round_num == 0 {
